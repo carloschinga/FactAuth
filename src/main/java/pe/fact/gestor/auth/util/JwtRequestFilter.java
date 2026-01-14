@@ -34,8 +34,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        // Permitir login sin token
-        if (path.equals("/login")) {
+        // Permitir login sin token (CORREGIDO)
+        // Usamos startsWith para asegurar que coincida con la ruta del controlador
+        if (path.startsWith("/auth/login")) {
             filterChain.doFilter(request, response);
             return;
         }
