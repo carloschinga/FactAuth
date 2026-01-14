@@ -23,6 +23,7 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    /* El API login es la funcionalidad de validar inicio de aplicacion*/
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
         try {
