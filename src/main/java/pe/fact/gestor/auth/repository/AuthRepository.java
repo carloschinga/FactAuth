@@ -3,52 +3,75 @@ package pe.fact.gestor.auth.repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Repository
 public class AuthRepository {
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // LOGIN (No tocar, este funciona bien)
+    // --- LOGIN CON SOPORTE SHA-256 ---
     public String login(String username, String password) {
-        String sql = "CALL sp_fact_usuario_login(?, ?)";
-        return jdbcTemplate.query(sql, new Object[]{username, password}, rs -> {
+        // 1. Encriptamos la clave recibida para compararla con la BD
+        String passwordHash = hashSHA256(password);
+
+        // Debug para verificar
+        System.out.println("Login: " + username + " | Input: " + password + " | Hash Generado: " + passwordHash);
+
+        // 2. Consulta Directa (Buscamos usuario y clave encriptada)
+        String sql = "SELECT * FROM usuario WHERE logiUsua = ? AND passUsua = ?";
+
+        return jdbcTemplate.query(sql, new Object[]{username, passwordHash}, rs -> {
             if (rs.next()) {
+                String secret = "";
+                try { secret = rs.getString("secreKey"); } catch (Exception e) { secret = ""; }
+                if (secret == null) secret = "";
+
                 return "{"
                         + "\"codiUsua\":" + rs.getInt("codiUsua") + ","
                         + "\"ndniUsua\":\"" + rs.getString("ndniUsua") + "\","
                         + "\"logiUsua\":\"" + rs.getString("logiUsua") + "\","
                         + "\"niveUsua\":" + rs.getInt("niveUsua") + ","
-                        + "\"secreKey\":\"" + rs.getString("secreKey") + "\""
+                        + "\"secreKey\":\"" + secret + "\""
                         + "}";
             }
-            return "{}";
+            return "{}"; // No encontrado
         });
     }
 
-    // VALIDACIÓN DE TOKEN (Aquí estaba el error)
     public pe.fact.gestor.auth.entity.Personal buscarPorUsuario(String username) {
-        // CORRECCIÓN: Usamos TU tabla 'usuario' y TUS columnas reales
         String sql = "SELECT * FROM usuario WHERE logiUsua = ?";
-
         try {
             return jdbcTemplate.queryForObject(sql, new Object[]{username}, (rs, rowNum) -> {
                 pe.fact.gestor.auth.entity.Personal p = new pe.fact.gestor.auth.entity.Personal();
-
-                // Mapeo manual a tu Entidad Personal para que Spring no se queje
-                p.setCodiPers(rs.getInt("codiUsua"));   // ID
-                p.setUsuario(rs.getString("logiUsua")); // Usuario (admin)
-                p.setClave(rs.getString("passUsua"));   // Contraseña Hash
-
-                // Datos ficticios porque tu tabla usuario no tiene nombres
+                p.setCodiPers(rs.getInt("codiUsua"));
+                p.setUsuario(rs.getString("logiUsua"));
+                p.setClave(rs.getString("passUsua"));
                 p.setNombPers("Usuario");
                 p.setAppaPers("Sistema");
-
                 return p;
             });
         } catch (Exception e) {
-            System.out.println("Error buscando usuario en BD: " + e.getMessage());
             return null;
+        }
+    }
+
+    // --- HELPER PARA ENCRIPTAR (SHA-256) ---
+    private String hashSHA256(String base) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(base.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException("Error al encriptar clave", ex);
         }
     }
 }
