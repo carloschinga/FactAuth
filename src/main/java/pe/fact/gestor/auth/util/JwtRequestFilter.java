@@ -1,9 +1,9 @@
 package pe.fact.gestor.auth.util;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,21 +22,25 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Permitir preflight CORS
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String path = request.getServletPath();
+        String uri = request.getRequestURI();
 
-        // Permitir login sin token (CORREGIDO)
-        // Usamos startsWith para asegurar que coincida con la ruta del controlador
-        if (path.startsWith("/auth/login")) {
+        // LOG DEBUG para ver qué está pasando en Tomcat
+        System.out.println("JwtRequestFilter: Processing path=" + path + ", URI=" + uri);
+
+        // CAMBIO CRÍTICO: Permitir paso libre si es login
+        // Usamos contains o endsWith para ser más robustos ante Context Path (/auth)
+        if (path.equals("/") || path.contains("/login") || uri.endsWith("/login")) {
+            System.out.println("JwtRequestFilter: Permitting access to public endpoint: " + uri);
             filterChain.doFilter(request, response);
             return;
         }
@@ -61,16 +65,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         String username = jwtUtil.extractUsername(token);
 
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        Collections.emptyList()
-                );
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                username,
+                null,
+                Collections.emptyList());
 
         authentication.setDetails(
-                new WebAuthenticationDetailsSource().buildDetails(request)
-        );
+                new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
