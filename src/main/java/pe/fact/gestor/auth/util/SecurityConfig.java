@@ -13,6 +13,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pe.fact.gestor.auth.service.CustomUserDetailsService;
+import java.util.Collections;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,9 +56,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+
+        // 2. CAMBIO: Reemplaza List.of("*") por Collections.singletonList("*")
+        configuration.setAllowedOrigins(Collections.singletonList("*"));
+
+        // Este ya estaba bien, usa Arrays.asList
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+
+        // 3. CAMBIO: Reemplaza List.of("*") por Collections.singletonList("*")
+        configuration.setAllowedHeaders(Collections.singletonList("*"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

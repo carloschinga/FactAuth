@@ -18,18 +18,13 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
-    // ==========================================
-    // 1. DIAGNÓSTICO EN LA PÁGINA PRINCIPAL
-    // ==========================================
     // Se ejecuta al entrar a: http://IP:8080/auth/
     @GetMapping // <--- SIN RUTA, responde a la raíz "/"
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("ESTADO: OPERATIVO - El módulo AUTH responde correctamente.");
     }
 
-    // ==========================================
     // 2. ENDPOINT DE LOGIN
-    // ==========================================
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
         try {
