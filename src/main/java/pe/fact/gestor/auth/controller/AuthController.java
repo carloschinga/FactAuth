@@ -19,7 +19,7 @@ public class AuthController {
     private AuthService authService;
 
     // ==========================================
-    // 1. DIAGNÓSTICO EN LA PÁGINA PRINCIPAL
+    // 1. DIAGNÓSTICO EN LA PÁGINA PRINCIPAAAL
     // ==========================================
     // Se ejecuta al entrar a: http://IP:8080/auth/
     @GetMapping // <--- SIN RUTA, responde a la raíz "/"
